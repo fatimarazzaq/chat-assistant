@@ -1,10 +1,12 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from openai import OpenAI
+from django.conf import settings
 
 # Create your views here.
 
-api_key="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"
+api_key=settings.OPENAI_API_KEY
+
 
 client = OpenAI(api_key=api_key)
 

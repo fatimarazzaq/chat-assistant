@@ -38,6 +38,28 @@
             background: white;
             border-top: 1px solid #ccc;
         }
+        /* Loader styling */
+        .loader {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px 0;
+        }
+        .loader span {
+            width: 8px;
+            height: 8px;
+            margin: 0 3px;
+            background-color: #007bff;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .loader span:nth-child(1) { animation-delay: -0.32s; }
+        .loader span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
 </style>
 <div>
     <h3 class="text-center mt-4 mb-2">What can I help with?</h3>
@@ -68,6 +90,15 @@
             chatBox.appendChild(userMessage);
             input.value = "";
 
+            // Show loader
+            const loader = document.createElement("div");
+            loader.className = "loader align-self-start";
+            loader.innerHTML = "<span></span><span></span><span></span>";
+            chatBox.appendChild(loader);
+
+            // Scroll to bottom
+            chatBox.scrollTop = chatBox.scrollHeight;
+
             // Send message to backend
             fetch("{% url 'chat_home' %}", {
                 method: "POST",
@@ -81,6 +112,9 @@
             })
             .then(response => response.json())
             .then(data => {
+                // Remove loader
+                chatBox.removeChild(loader);
+
                 // Display bot response
                 const botMessage = document.createElement("div");
                 botMessage.className = "message bot-message align-self-start";
@@ -90,7 +124,10 @@
                 // Scroll chat to the bottom
                 chatBox.scrollTop = chatBox.scrollHeight;
             })
-            .catch(error => console.error("Error:", error));
+            .catch(error => {
+                console.error("Error:", error);
+                chatBox.removeChild(loader); // Remove loader in case of an error
+            });
         }
     }
 

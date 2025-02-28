@@ -2,136 +2,176 @@
 
 {% block content %}
 <style>
-        .chat-container {
-            max-width: 1200px;
-            margin: 20px auto;
-            height: 80vh;
-            display: flex;
-            flex-direction: column;
-            border: 1px solid #ccc;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        .chat-box {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 15px;
-            background-color: #f8f9fa;
-        }
-        .message {
-            margin-bottom: 10px;
-            padding: 10px;
-            border-radius: 8px;
-            max-width: 75%;
-        }
-        .user-message {
-            background-color: #007bff;
-            color: white;
-            align-self: flex-end;
-        }
-        .bot-message {
-            background-color: #e9ecef;
-            align-self: flex-start;
-        }
-        .input-box {
-            padding: 10px;
-            background: white;
-            border-top: 1px solid #ccc;
-        }
-        /* Loader styling */
-        .loader {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 10px 0;
-        }
-        .loader span {
-            width: 8px;
-            height: 8px;
-            margin: 0 3px;
-            background-color: #007bff;
-            border-radius: 50%;
-            animation: bounce 1.4s infinite ease-in-out both;
-        }
-        .loader span:nth-child(1) { animation-delay: -0.32s; }
-        .loader span:nth-child(2) { animation-delay: -0.16s; }
-
-        @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
-        }
+    .chat-container {
+        height: 92vh;
+        display: flex;
+        flex-direction: column;
+    }
+    .chat-box {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 20px;
+        background-color: #f8f9fa;
+        display: flex;
+        flex-direction: column;
+    }
+    .message {
+        margin-bottom: 10px;
+        padding: 12px;
+        border-radius: 8px;
+        max-width: 70%;
+    }
+    .user-message {
+        background-color: #007bff;
+        color: white;
+        align-self: flex-end;
+        text-align: right;
+    }
+    .bot-message {
+        background-color: #e9ecef;
+        align-self: flex-start;
+    }
+    .input-box {
+        display: flex;
+        padding: 15px;
+        border-top: 1px solid #ccc;
+        background: white;
+    }
+    .input-box textarea {
+        flex-grow: 1;
+        resize: none;
+    }
+    .loader {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 10px 0;
+    }
+    .loader span {
+        width: 8px;
+        height: 8px;
+        margin: 0 3px;
+        background-color: #007bff;
+        border-radius: 50%;
+        animation: bounce 1.4s infinite ease-in-out both;
+    }
+    .loader span:nth-child(1) { animation-delay: -0.32s; }
+    .loader span:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes bounce {
+        0%, 80%, 100% { transform: scale(0); }
+        40% { transform: scale(1); }
+    }
 </style>
-<div>
-    <h3 class="text-center mt-4 mb-2">What can I help with?</h3>
-    <div class="chat-container d-flex flex-column">
-        <div class="chat-box d-flex flex-column" id="chatBox">
-            <div class="message bot-message">Hello! How can I assist you today?</div>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar (3 Columns) -->
+        <div class="col-3 bg-light p-3">
+            <h4 class="d-flex justify-content-between align-items-center">
+                Chat Sessions
+                <i class="fas fa-plus-circle text-primary" style="cursor: pointer;" onclick="startNewChat()"></i>
+            </h4>
+            <ul class="list-group" id="chatList">
+                {% for session in chat_sessions %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center"
+                        onclick="loadChatSession('{{ session.id }}')">
+                        {{ session.title }}
+                        <!-- Pencil Icon for Renaming -->
+                         <div>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="renameSession('{{ session.id }}')">
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
+
+                            <!-- delete  -->
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteSession('{{ session.id }}')">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item text-muted">No chat sessions found</li>
+                {% endfor %}
+            </ul>
+            
+            
+            
         </div>
-            <div class="input-box d-flex">
-                <textarea class="form-control me-2" id="messageInput" name="messageInput" placeholder="Type a message..." rows="2"></textarea>
-                <button class="btn btn-primary px-4 text-md" onclick="sendMessage()">
-                    <i class="fas fa-paper-plane"></i> <!-- Send Icon -->
+
+        <!-- Chat Section (9 Columns) -->
+        <div class="col-9 d-flex flex-column chat-container">
+            <div class="chat-box" id="chatBox">
+                <div class="message bot-message">Hello! How can I assist you today?</div>
+            </div>
+            <div class="input-box">
+                <textarea class="form-control me-2" id="messageInput" placeholder="Type a message..." rows="2"></textarea>
+                <button class="btn btn-primary px-4" onclick="sendMessage()">
+                    <i class="fas fa-paper-plane"></i>
                 </button>
             </div>
+        </div>
     </div>
-
 </div>
+
 <script>
-    function sendMessage() {
-        const input = document.getElementById("messageInput");
-        const chatBox = document.getElementById("chatBox");
-        const message = input.value.trim();
+    let activeSessionId = null; // Track active chat session
 
-        if (message) {
-            // Display user message
-            const userMessage = document.createElement("div");
-            userMessage.className = "message user-message align-self-end";
-            userMessage.innerText = message;
-            chatBox.appendChild(userMessage);
-            input.value = "";
-
-            // Show loader
-            const loader = document.createElement("div");
-            loader.className = "loader align-self-start";
-            loader.innerHTML = "<span></span><span></span><span></span>";
-            chatBox.appendChild(loader);
-
-            // Scroll to bottom
-            chatBox.scrollTop = chatBox.scrollHeight;
-
-            // Send message to backend
-            fetch("{% url 'chat_home' %}", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "X-CSRFToken": getCookie("csrftoken"), // CSRF token for Django
-                },
-                body: new URLSearchParams({
-                    "message": message
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Remove loader
-                chatBox.removeChild(loader);
-
-                // Display bot response
-                const botMessage = document.createElement("div");
-                botMessage.className = "message bot-message align-self-start";
-                botMessage.innerText = data.response;
-                chatBox.appendChild(botMessage);
-
-                // Scroll chat to the bottom
-                chatBox.scrollTop = chatBox.scrollHeight;
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                chatBox.removeChild(loader); // Remove loader in case of an error
-            });
-        }
+function sendMessage() {
+    if (!activeSessionId) {
+        alert("Please start a new chat session first!");
+        return;
     }
 
-    // Function to get CSRF token for security
+    const input = document.getElementById("messageInput");
+    const chatBox = document.getElementById("chatBox");
+    const message = input.value.trim();
+
+    if (message) {
+        // Display user message
+        const userMessage = document.createElement("div");
+        userMessage.className = "message user-message";
+        userMessage.innerText = message;
+        chatBox.appendChild(userMessage);
+        input.value = "";
+
+        // Show loader
+        const loader = document.createElement("div");
+        loader.className = "loader";
+        loader.innerHTML = "<span></span><span></span><span></span>";
+        chatBox.appendChild(loader);
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // Send message to backend
+        fetch("{% url 'chat_home' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": getCookie("csrftoken"),
+            },
+            body: new URLSearchParams({
+                "message": message,
+                "session_id": activeSessionId // Attach session ID
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            chatBox.removeChild(loader); // Remove loader
+
+            // Display bot response
+            const botMessage = document.createElement("div");
+            botMessage.className = "message bot-message";
+            botMessage.innerText = data.response;
+            chatBox.appendChild(botMessage);
+
+            chatBox.scrollTop = chatBox.scrollHeight;
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            chatBox.removeChild(loader);
+        });
+    }
+}
+
+
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== "") {
@@ -146,6 +186,107 @@
         }
         return cookieValue;
     }
+
+    function startNewChat() {
+        fetch("/chat/session/create/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie("csrftoken")
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Clear chat box and display default bot message
+                document.getElementById("chatBox").innerHTML = `<div class="message bot-message">Hello! How can I assist you today?</div>`;
+
+                // Add the new chat session to the sidebar list
+                const chatList = document.getElementById("chatList");
+                const newChatItem = document.createElement("li");
+                newChatItem.className = "list-group-item d-flex justify-content-between align-items-center";
+                newChatItem.innerHTML = `<span onclick="loadChatSession('${data.session_id}')">${data.session_title}</span>
+                    <span class="badge bg-primary rounded-pill">0</span>`;
+                
+                chatList.appendChild(newChatItem);
+            }
+        })
+        .catch(error => console.error("Error creating chat session:", error));
+    }
+
+
+    function loadChatSession(sessionId) {
+        activeSessionId = sessionId; // Update active session
+
+
+        fetch(`/load_session/${sessionId}/`)
+        .then(response => response.json())
+        .then(data => {
+            const chatBox = document.getElementById("chatBox");
+            chatBox.innerHTML = ""; // Clear previous messages
+
+            data.chats.forEach(chat => {
+                const userMessageDiv = document.createElement("div");
+                userMessageDiv.className = "message user-message";
+                userMessageDiv.innerText = chat.message;
+                chatBox.appendChild(userMessageDiv);
+
+                if (chat.response) {
+                    const botMessageDiv = document.createElement("div");
+                    botMessageDiv.className = "message bot-message";
+                    botMessageDiv.innerText = chat.response;
+                    chatBox.appendChild(botMessageDiv);
+                }
+            });
+
+            chatBox.scrollTop = chatBox.scrollHeight;
+        })
+        .catch(error => console.error("Error loading session:", error));
+    }
+
+    function renameSession(sessionId) {
+        let newTitle = prompt("Enter new chat session name:");
+        if (newTitle && newTitle.trim() !== "") {
+            fetch(`chat/session/${sessionId}/rename/`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify({ title: newTitle })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById(`session-title-${sessionId}`).innerText = newTitle;
+                } else {
+                    alert("Failed to rename session.");
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        }
+    }
+
+    function deleteSession(sessionId) {
+        if (confirm("Are you sure you want to delete this chat session?")) {
+            fetch(`/chat/session/${sessionId}/delete/`, {
+                method: "DELETE",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}"
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();  // Reload the page to update the list
+                } else {
+                    alert("Failed to delete session.");
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        }
+    }
+
 </script>
 
 {% endblock content %}

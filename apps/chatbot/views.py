@@ -22,7 +22,7 @@ client = OpenAI(api_key=settings.OPENAI_API_KEY)
 def chat_response(message):
     try:
         completion = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": message},

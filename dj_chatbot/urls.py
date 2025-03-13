@@ -21,10 +21,13 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('apps.chatbot.urls')),
-    path('accounts/', include('apps.accounts.urls')),
+    path('', include('apps.chatbot.urls')),  # Web routes
+    path('accounts/', include('apps.accounts.urls')),  # Web routes
+    path('api/v1/', include([
+        path('auth/', include('apps.accounts.api_urls')),  # Auth API routes
+        path('chat/', include('apps.chatbot.api_urls')),  # Chat API routes
+    ])),
 ]
-
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

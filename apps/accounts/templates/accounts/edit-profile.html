@@ -1,0 +1,93 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}
+    Edit Profile
+{% endblock title %}
+
+{% block content %}
+    <div class="profile-container">
+        <div class="profile-card">
+            <div class="profile-header">
+                <a href="{% url 'chat_home' %}" class="back-btn" style="font-size: 14px;">
+                    <i class="fas fa-arrow-left"></i>
+                    Back
+                </a>
+                <h1 class="text-center" style="padding-left: 140px;">Edit Profile</h1>
+            </div>
+
+            <div class="profile-content">
+                <div class="profile-avatar">
+                    <div class="avatar-preview">
+                        <img src="https://via.placeholder.com/150" alt="Profile Picture" id="avatar-preview">
+                        <div class="avatar-overlay">
+                            <i class="fas fa-camera"></i>
+                        </div>
+                    </div>
+                    <button class="change-avatar-btn">Change Photo</button>
+                    <input type="file" id="avatar-input" accept="image/*" hidden>
+                </div>
+
+                <form class="profile-form">
+                    <div class="form-group">
+                        <i class="fas fa-user" style="margin-top: 12px;"></i>
+                        <label for="name">Full Name</label>
+                        <input type="text" id="name" value="John Doe" required>
+                    </div>
+
+                    <div class="form-group">
+                        <i class="fas fa-envelope" style="margin-top: 12px;"></i>
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" value="john.doe@example.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="bio">Bio</label>
+                        <textarea id="bio" rows="4">Music enthusiast and playlist curator</textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="cancel-btn">Cancel</button>
+                        <button type="submit" class="save-btn">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Avatar preview functionality
+        const avatarInput = document.getElementById('avatar-input');
+        const avatarPreview = document.getElementById('avatar-preview');
+        const changeAvatarBtn = document.querySelector('.change-avatar-btn');
+
+        changeAvatarBtn.addEventListener('click', () => {
+            avatarInput.click();
+        });
+
+        avatarInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    avatarPreview.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Form submission
+        const profileForm = document.querySelector('.profile-form');
+        const cancelBtn = document.querySelector('.cancel-btn');
+
+        profileForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            // Add your form submission logic here
+            alert('Profile updated successfully!');
+            window.location.href = "{% url 'chat_home' %}";
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            window.location.href = "{% url 'chat_home' %}";
+        });
+    </script>
+{% endblock content %}

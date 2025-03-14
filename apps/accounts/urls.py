@@ -1,10 +1,13 @@
 from django.urls import path
 from . import views
 
+
 # Web URLs only
 urlpatterns = [
-    path('register/', views.user_register, name='register'),
+    path('signup/', views.user_signup, name='signup'),
     path('login/', views.user_login, name='login'),
+    path('profile/', views.user_profile, name='user-profile'),
+    path('edit-profile/', views.user_edit_profile, name='user-edit-profile'),
     path('logout/', views.user_logout, name='logout'),
 ]
 

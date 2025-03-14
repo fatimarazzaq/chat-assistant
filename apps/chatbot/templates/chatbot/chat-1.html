@@ -1,0 +1,557 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+<style>
+    .chat-container {
+        height: 92vh;
+        display: flex;
+        flex-direction: column;
+    }
+    .chat-box {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 20px;
+        background-color: #f8f9fa;
+        display: flex;
+        flex-direction: column;
+    }
+    .message {
+        margin-bottom: 10px;
+        padding: 12px;
+        border-radius: 8px;
+        max-width: 80%;
+        position: relative;
+    }
+    .user-message {
+        background-color: #007bff;
+        color: white;
+        align-self: flex-end;
+        text-align: right;
+    }
+    .bot-message {
+        background-color: #e9ecef;
+        align-self: flex-start;
+        position: relative;
+        padding-bottom: 35px; /* Add padding for the copy button */
+    }
+    .input-box {
+        display: flex;
+        padding: 15px;
+        border-top: 1px solid #ccc;
+        background: white;
+    }
+    .input-box textarea {
+        flex-grow: 1;
+        resize: none;
+    }
+    .loader {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 10px 0;
+    }
+    .loader span {
+        width: 8px;
+        height: 8px;
+        margin: 0 3px;
+        background-color: #007bff;
+        border-radius: 50%;
+        animation: bounce 1.4s infinite ease-in-out both;
+    }
+    .loader span:nth-child(1) { animation-delay: -0.32s; }
+    .loader span:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes bounce {
+        0%, 80%, 100% { transform: scale(0); }
+        40% { transform: scale(1); }
+    }
+    .copy-button {
+        position: absolute;
+        bottom: 5px;
+        right: 5px;
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        padding: 5px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.9em;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+    .bot-message:hover .copy-button {
+        opacity: 1;
+    }
+    .copy-button:hover {
+        color: #007bff;
+    }
+    .copy-button.copied {
+        color: #28a745;
+    }
+    .chat-header {
+        background-color: #f8f9fa;
+        padding: 15px 20px;
+        border-bottom: 1px solid #dee2e6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .chat-header h4 {
+        margin: 0;
+        color: #495057;
+        font-weight: 600;
+    }
+    .sidebar-header {
+        padding: 15px 20px;
+        border-bottom: 1px solid #dee2e6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #f8f9fa;
+    }
+    .sidebar-header h4 {
+        margin: 0;
+        color: #495057;
+        font-weight: 600;
+    }
+    .new-chat-btn {
+        background: none;
+        border: none;
+        color: #007bff;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 5px 10px;
+        border-radius: 50%;
+        transition: all 0.2s;
+    }
+    .new-chat-btn:hover {
+        background-color: #e9ecef;
+        transform: scale(1.1);
+    }
+    .list-group-flush {
+        border-radius: 0;
+    }
+    .list-group-item {
+        border-left: none;
+        border-right: none;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    .list-group-item:hover {
+        background-color: #f8f9fa;
+    }
+    .list-group-item.active:hover {
+        background-color: #0056b3;
+    }
+    .list-group-item:first-child {
+        border-top: none;
+    }
+    .list-group-item:last-child {
+        border-bottom: none;
+    }
+    .edit-form {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+    }
+    .edit-input {
+        width: 150px;
+        padding: 2px 5px;
+    }
+    .save-btn, .cancel-btn {
+        padding: 2px 5px;
+    }
+    .session-title, .session-actions, .edit-form {
+        transition: all 0.3s ease;
+    }
+    .d-none {
+        display: none !important;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar (3 Columns) -->
+        <div class="col-3 bg-light p-0">
+            <div class="sidebar-header">
+                <h4>Chat Sessions</h4>
+                <button class="new-chat-btn" onclick="startNewChat()">
+                    <i class="fas fa-plus-circle"></i>
+                </button>
+            </div>
+            <ul class="list-group list-group-flush" id="chatList">
+                {% for session in chat_sessions %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center {% if forloop.first %}active bg-primary text-white{% endif %}"
+                        onclick="loadChatSession('{{ session.id }}', this)">
+                        <span class="session-title">{{ session.title }}</span>
+                        <div class="session-actions">
+                            <button class="btn btn-sm {% if forloop.first %}btn-outline-light{% else %}btn-outline-warning{% endif %} edit-btn" onclick="event.stopPropagation(); toggleEdit('{{ session.id }}')">
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
+                            <button class="btn btn-sm {% if forloop.first %}btn-outline-light{% else %}btn-outline-warning{% endif %}" onclick="event.stopPropagation(); deleteSession('{{ session.id }}')">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                        <div class="edit-form d-none">
+                            <input type="text" class="form-control form-control-sm edit-input" value="{{ session.title }}">
+                            <button class="btn btn-sm btn-success save-btn" onclick="event.stopPropagation(); saveEdit('{{ session.id }}')">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger cancel-btn" onclick="event.stopPropagation(); cancelEdit('{{ session.id }}')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item text-muted">No chat sessions found</li>
+                {% endfor %}
+            </ul>
+            
+            
+            
+        </div>
+
+        <!-- Chat Section (9 Columns) -->
+        <div class="col-9 d-flex flex-column chat-container">
+            <div class="chat-header">
+                <h4>Chat Assistant</h4>
+            </div>
+            <div class="chat-box" id="chatBox">
+                <div class="message bot-message">Hello! How can I assist you today?</div>
+            </div>
+            <div class="input-box">
+                <textarea class="form-control me-2" id="messageInput" placeholder="Type a message..." rows="2"></textarea>
+                <button class="btn btn-primary px-4" onclick="sendMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let activeSessionId = null; // Track active chat session
+    let previousResponse = null; // Store the previous response
+
+    // Add this function to initialize chat session
+    function initializeChatSession() {
+        const chatList = document.getElementById("chatList");
+        if (chatList.querySelectorAll(".list-group-item").length === 1 && 
+            chatList.querySelector(".text-muted")) {
+            // No chat sessions exist, create a new one
+            startNewChat();
+        } else {
+            // Load the first chat session if it exists
+            const firstSession = chatList.querySelector(".list-group-item:not(.text-muted)");
+            if (firstSession) {
+                const sessionId = firstSession.getAttribute("onclick").match(/'([^']+)'/)[1];
+                loadChatSession(sessionId, firstSession);
+            }
+        }
+    }
+
+    // Call initializeChatSession when the page loads
+    document.addEventListener("DOMContentLoaded", initializeChatSession);
+
+    // Add event listener for Enter key
+    document.getElementById("messageInput").addEventListener("keypress", function(e) {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault(); // Prevent new line
+            sendMessage();
+        }
+    });
+
+    function copyMessage(text, button) {
+        navigator.clipboard.writeText(text).then(() => {
+            // Show feedback
+            button.classList.add('copied');
+            button.innerHTML = '<i class="fas fa-check"></i> Copied';
+            
+            setTimeout(() => {
+                button.classList.remove('copied');
+                button.innerHTML = '<i class="fas fa-copy"></i> Copy';
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
+        });
+    }
+
+    function createBotMessage(response) {
+        const botMessage = document.createElement("div");
+        botMessage.className = "message bot-message";
+        
+        // Create content container
+        const contentDiv = document.createElement("div");
+        contentDiv.innerHTML = response
+            .replace(/\n/g, '<br>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        
+        // Create copy button
+        const copyButton = document.createElement("button");
+        copyButton.className = "copy-button";
+        copyButton.innerHTML = '<i class="fas fa-copy"></i> Copy';
+        copyButton.onclick = function(e) {
+            e.stopPropagation(); // Prevent event bubbling
+            copyMessage(response, this);
+        };
+        
+        // Add content and button
+        botMessage.appendChild(contentDiv);
+        botMessage.appendChild(copyButton);
+        
+        return botMessage;
+    }
+
+    function sendMessage() {
+        if (!activeSessionId) {
+            startNewChat();
+            return;
+        }
+
+        const input = document.getElementById("messageInput");
+        const chatBox = document.getElementById("chatBox");
+        const message = input.value.trim();
+
+        if (message) {
+            const userMessage = document.createElement("div");
+            userMessage.className = "message user-message";
+            userMessage.innerText = message;
+            chatBox.appendChild(userMessage);
+            input.value = "";
+
+            // Check if the message is a formatting request
+            if (message.toLowerCase().includes("add heading") && previousResponse) {
+                const formattedResponse = `## You Are A Helpful Assistant<br><br>${previousResponse.replace(/\n/g, '<br>')}`;
+                const botMessage = createBotMessage(formattedResponse);
+                chatBox.appendChild(botMessage);
+                chatBox.scrollTop = chatBox.scrollHeight;
+                return;
+            }
+
+            // Show loader
+            const loader = document.createElement("div");
+            loader.className = "loader";
+            loader.innerHTML = "<span></span><span></span><span></span>";
+            chatBox.appendChild(loader);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            fetch("{% url 'chat_home' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": getCookie("csrftoken"),
+                },
+                body: new URLSearchParams({
+                    "message": message,
+                    "session_id": activeSessionId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                chatBox.removeChild(loader);
+                const botMessage = createBotMessage(data.response);
+                chatBox.appendChild(botMessage);
+                previousResponse = data.response;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                chatBox.removeChild(loader);
+            });
+        }
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== "") {
+            const cookies = document.cookie.split(";");
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.startsWith(name + "=")) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function startNewChat() {
+        fetch("/chat/session/create/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie("csrftoken")
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById("chatBox").innerHTML = '<div class="message bot-message">Hello! How can I assist you today?</div>';
+
+                const chatList = document.getElementById("chatList");
+
+                // Remove previous active selection
+                chatList.querySelectorAll(".active").forEach(el => el.classList.remove("active", "bg-primary"));
+
+                // Create new chat item
+                const newChatItem = document.createElement("li");
+                newChatItem.className = "list-group-item d-flex justify-content-between align-items-center active bg-primary text-white";
+                newChatItem.setAttribute("onclick", `loadChatSession('${data.session_id}', this)`);
+                newChatItem.innerHTML = `
+                    <span>${data.session_title}</span>
+                    <div>
+                        <button class="btn btn-sm btn-outline-light" onclick="event.stopPropagation(); renameSession('${data.session_id}')">
+                            <i class="fas fa-pencil-alt"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-light" onclick="event.stopPropagation(); deleteSession('${data.session_id}')">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                `;
+
+                chatList.prepend(newChatItem);
+                loadChatSession(data.session_id, newChatItem);
+            }
+        })
+        .catch(error => console.error("Error creating chat session:", error));
+    }
+
+    function loadChatSession(sessionId, element) {
+        activeSessionId = sessionId;
+
+        fetch(`/load_session/${sessionId}/`)
+        .then(response => response.json())
+        .then(data => {
+            const chatBox = document.getElementById("chatBox");
+            chatBox.innerHTML = "";
+
+            data.chats.forEach(chat => {
+                const userMessageDiv = document.createElement("div");
+                userMessageDiv.className = "message user-message";
+                userMessageDiv.innerText = chat.message;
+                chatBox.appendChild(userMessageDiv);
+
+                if (chat.response) {
+                    const botMessage = createBotMessage(chat.response);
+                    chatBox.appendChild(botMessage);
+                }
+            });
+
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Highlight the selected session
+            const chatList = document.getElementById("chatList");
+            chatList.querySelectorAll(".list-group-item").forEach(el => {
+                el.classList.remove("active", "bg-primary", "text-white");
+                // Reset button colors for non-active items
+                el.querySelectorAll('.btn').forEach(btn => {
+                    btn.classList.remove('btn-outline-light');
+                    btn.classList.add('btn-outline-warning');
+                });
+            });
+
+            if (element) {
+                element.classList.add("active", "bg-primary", "text-white");
+                // Update button colors for active item
+                element.querySelectorAll('.btn').forEach(btn => {
+                    btn.classList.remove('btn-outline-warning');
+                    btn.classList.add('btn-outline-light');
+                });
+            }
+        })
+        .catch(error => console.error("Error loading session:", error));
+    }
+
+    function toggleEdit(sessionId) {
+        const listItem = document.querySelector(`[onclick*="${sessionId}"]`);
+        const titleSpan = listItem.querySelector('.session-title');
+        const actionsDiv = listItem.querySelector('.session-actions');
+        const editForm = listItem.querySelector('.edit-form');
+        
+        titleSpan.classList.add('d-none');
+        actionsDiv.classList.add('d-none');
+        editForm.classList.remove('d-none');
+        
+        // Focus the input
+        const input = editForm.querySelector('.edit-input');
+        input.focus();
+        
+        // Select the text
+        input.select();
+    }
+    
+    function saveEdit(sessionId) {
+        const listItem = document.querySelector(`[onclick*="${sessionId}"]`);
+        const input = listItem.querySelector('.edit-input');
+        const newTitle = input.value.trim();
+        
+        if (newTitle) {
+            fetch(`/chat/session/${sessionId}/rename/`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify({ title: newTitle })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const titleSpan = listItem.querySelector('.session-title');
+                    titleSpan.textContent = newTitle;
+                    cancelEdit(sessionId);
+                } else {
+                    alert("Failed to rename session.");
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        } else {
+            cancelEdit(sessionId);
+        }
+    }
+    
+    function cancelEdit(sessionId) {
+        const listItem = document.querySelector(`[onclick*="${sessionId}"]`);
+        const titleSpan = listItem.querySelector('.session-title');
+        const actionsDiv = listItem.querySelector('.session-actions');
+        const editForm = listItem.querySelector('.edit-form');
+        
+        titleSpan.classList.remove('d-none');
+        actionsDiv.classList.remove('d-none');
+        editForm.classList.add('d-none');
+    }
+    
+    // Add event listener for Enter key in edit input
+    document.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && e.target.classList.contains('edit-input')) {
+            e.preventDefault();
+            const sessionId = e.target.closest('li').getAttribute('onclick').match(/'([^']+)'/)[1];
+            saveEdit(sessionId);
+        }
+    });
+
+    function deleteSession(sessionId) {
+        if (confirm("Are you sure you want to delete this chat session?")) {
+            fetch(`/chat/session/${sessionId}/delete/`, {
+                method: "DELETE",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}"
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();  // Reload the page to update the list
+                } else {
+                    alert("Failed to delete session.");
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        }
+    }
+</script>
+
+{% endblock content %}

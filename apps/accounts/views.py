@@ -13,7 +13,7 @@ from .serializers import RegisterSerializer, LoginSerializer, UserSerializer
 # Create your views here.
 
 
-def user_register(request):
+def user_signup(request):
     if request.method == "POST":
         username = request.POST["username"]
         email = request.POST["email"]
@@ -37,7 +37,7 @@ def user_register(request):
         messages.success(request, "Your account has been created successfully! You can now log in.")
         return redirect("login")
 
-    return render(request, "accounts/register.html")
+    return render(request, "accounts/signup.html")
 
 
 
@@ -57,6 +57,11 @@ def user_login(request):
 
     return render(request, "accounts/login.html")
 
+def user_profile(request):
+    return render(request, "accounts/profile.html")
+
+def user_edit_profile(request):
+    return render(request, "accounts/edit-profile.html")
 
 def user_logout(request):
     logout(request)

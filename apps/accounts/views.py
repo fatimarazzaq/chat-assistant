@@ -61,6 +61,28 @@ def user_profile(request):
     return render(request, "accounts/profile.html")
 
 def user_edit_profile(request):
+    if request.method == "POST":
+        full_name = request.POST.get("full_name")
+        email = request.POST.get("email")
+        bio = request.POST.get("bio")
+        
+        # Update user profile
+        user = request.user
+        profile = user.userprofile
+        profile.full_name = full_name
+        profile.bio = bio
+        
+        # Handle profile picture upload
+        if 'profile_picture' in request.FILES:
+            profile.profile_picture = request.FILES['profile_picture']
+        
+        # Save changes
+        user.email = email
+        user.save()
+        profile.save()
+        
+        return redirect('user-profile')
+        
     return render(request, "accounts/edit-profile.html")
 
 def user_logout(request):

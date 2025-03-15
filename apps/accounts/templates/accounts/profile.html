@@ -20,22 +20,22 @@
             <div class="profile-content">
                 <div class="profile-avatar">
                     <div class="avatar-preview">
-                        <i class="fas fa-user"></i>
+                        <!-- <i class="fas fa-user"></i> -->
+                         <img src="{{user.userprofile.profile_picture.url}}" alt="">
                     </div>
-                    <button class="change-avatar-btn">
-                        <i class="fas fa-camera"></i>
-                        Change Photo
-                    </button>
-                    <input type="file" id="avatar-input" accept="image/*" style="display: none;">
                 </div>
                 <div class="profile-info">
                     <div class="info-group">
                         <label>Full Name</label>
-                        <p>John Doe</p>
+                        <p>{{ user.userprofile.full_name }}</p>
+                    </div>
+                    <div class="info-group">
+                        <label>Username</label>
+                        <p>{{ user.username }}</p>
                     </div>
                     <div class="info-group">
                         <label>Email</label>
-                        <p>john.doe@example.com</p>
+                        <p>{{ user.email }}</p>
                     </div>
                     <div class="info-group">
                         <label>Member Since</label>

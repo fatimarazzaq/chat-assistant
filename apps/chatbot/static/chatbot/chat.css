@@ -18,7 +18,7 @@ body {
 
 .app-container {
     width: 100%;
-    max-width: 1200px;
+    max-width: 1300px;
     height: 80vh;
     display: flex;
     gap: 20px;
@@ -65,7 +65,7 @@ body {
 
 /* Sidebar Styles */
 .sidebar {
-    width: 260px;
+    width: 300px;
     background: rgba(255, 255, 255, 0.95);
     border-radius: 20px;
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);

@@ -10,6 +10,9 @@ DJ Chatbot is a Django-based web application that serves as a chat assistant for
 - **User Authentication**: Login, logout, and profile management.
 - **Django Admin**: Manage data and configurations through the Django admin panel.
 
+## Visual
+![Visual](screenshots/chat.png)
+
 ## Installation
 
 Follow these steps to set up the project locally:

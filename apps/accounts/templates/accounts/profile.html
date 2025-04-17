@@ -1,74 +1,70 @@
 {% extends 'accounts/base.html' %}
 
 {% block title %}
-    Profile
+Profile
 {% endblock title %}
 
 {% block content %}
-    <div class="profile-container">
-        <div class="profile-card">
-            <div class="profile-header">
-                <a href="{% url 'chat_home' %}" class="back-btn">
-                    <i class="fas fa-arrow-left"></i>
-                </a>
-                <h1>Profile</h1>
-                <a href="{% url 'user-edit-profile' %}" class="edit-profile-btn">
-                    <i class="fas fa-edit"></i>
-                    Edit Profile
-                </a>
-            </div>
-            <div class="profile-content">
-                <div class="profile-avatar">
-                    <div class="avatar-preview">
-                        <!-- <i class="fas fa-user"></i> -->
-                         <img src="{{user.userprofile.profile_picture.url}}" alt="">
-                    </div>
+<div class="profile-container">
+    <div class="profile-card">
+        <div class="profile-header">
+            <a href="{% url 'chat_home' %}" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <h1>Profile</h1>
+            <a href="{% url 'user-edit-profile' %}" class="edit-profile-btn">
+                <i class="fas fa-edit"></i>
+                Edit Profile
+            </a>
+        </div>
+        <div class="profile-content">
+            <div class="profile-avatar">
+                <div class="avatar-preview">
+                    <!-- <i class="fas fa-user"></i> -->
+                    <img src="{{user.userprofile.profile_picture.url}}" alt="">
                 </div>
-                <div class="profile-info">
-                    <div class="info-group">
-                        <label>Full Name</label>
-                        <p>{{ user.userprofile.full_name }}</p>
-                    </div>
-                    <div class="info-group">
-                        <label>Username</label>
-                        <p>{{ user.username }}</p>
-                    </div>
-                    <div class="info-group">
-                        <label>Email</label>
-                        <p>{{ user.email }}</p>
-                    </div>
-                    <div class="info-group">
-                        <label>Member Since</label>
-                        <p>January 2024</p>
-                    </div>
-                    <div class="info-group">
-                        <label>Total Chats</label>
-                        <p>24</p>
-                    </div>
+            </div>
+            <div class="profile-info">
+                <div class="info-group">
+                    <label>Full Name</label>
+                    <p>{{ user.userprofile.full_name }}</p>
+                </div>
+                <div class="info-group">
+                    <label>Username</label>
+                    <p>{{ user.username }}</p>
+                </div>
+                <div class="info-group">
+                    <label>Email</label>
+                    <p>{{ user.email }}</p>
+                </div>
+                <div class="info-group">
+                    <label>Bio</label>
+                    <p>{{ user.userprofile.bio }}</p>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        // Avatar change functionality
-        const changeAvatarBtn = document.querySelector('.change-avatar-btn');
-        const avatarInput = document.getElementById('avatar-input');
-        const avatarPreview = document.querySelector('.avatar-preview');
+<script>
+    // Avatar change functionality
+    const changeAvatarBtn = document.querySelector('.change-avatar-btn');
+    const avatarInput = document.getElementById('avatar-input');
+    const avatarPreview = document.querySelector('.avatar-preview');
 
-        changeAvatarBtn.addEventListener('click', () => {
-            avatarInput.click();
-        });
+    changeAvatarBtn.addEventListener('click', () => {
+        avatarInput.click();
+    });
 
-        avatarInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    avatarPreview.innerHTML = `<img src="${e.target.result}" alt="Profile">`;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-    </script>
+    avatarInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                avatarPreview.innerHTML = `<img src="${e.target.result}" alt="Profile">`;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+</script>
 {% endblock content %}
